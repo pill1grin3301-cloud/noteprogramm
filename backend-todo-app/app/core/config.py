@@ -12,7 +12,7 @@ class Settings():
 
 def get_settings() -> Settings:
     return Settings(
-        DATABASE_URL = "postgresql+psycopg://postgres:admin@127.0.0.1:15432/postgres",
+        DATABASE_URL="postgresql+psycopg://postgres:admin@127.0.0.1:5432/note",
         cors_allowed_origins = ['http://localhost:3000'],
         cors_allow_methods = ['*']
 
