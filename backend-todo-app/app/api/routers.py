@@ -40,7 +40,7 @@ async def read_all_categories(cat_service: CategoryService = Depends(get_cat_ser
     return cat_service.list_categories()
 
 
-@category_router.post('')
+@category_router.post('', status_code=status.HTTP_201_CREATED)
 async def create_new_category(payload: CreateOrChangeCategory, cat_service: CategoryService = Depends(get_cat_service)) -> Category:
     return cat_service.create_category(payload)
 
@@ -50,6 +50,6 @@ async def update_cate(category_id: str, payload: CreateOrChangeCategory, cat_ser
     return cat_service.update_category(category_id, payload)
 
 
-@category_router.delete('/{category_id}')
+@category_router.delete('/{category_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def del_category(category_id, cat_service: CategoryService = Depends(get_cat_service)) -> None:
     return cat_service.delete_category(category_id)

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.models.base import Base
 from app.db.session import engine
 
-from app.api.routers.routers import task_router, category_router
+from app.api.routers import task_router, category_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
