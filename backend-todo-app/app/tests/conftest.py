@@ -27,8 +27,14 @@ def db_session(engine, tables):
     transaction = connection.begin()
     session = Session(bind=connection)
     
-    app.dependency_overrides[get_db] = lambda: session
-    
+    def override_get_db():
+        try:
+            yield session
+        finally:
+            pass
+
+
+    app.dependency_overrides[get_db] = override_get_db  
     yield session
     
     transaction.rollback()
