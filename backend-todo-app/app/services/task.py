@@ -3,6 +3,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models import UserORM
 from app.repositories.task import TaskRepository
 from app.schemas.tasks import TaskSchema, TaskCreate, TaskUpdate
 
@@ -12,22 +13,31 @@ class TaskService:
         self.db = db
         self.task_repository = TaskRepository(db=db)
 
-    def list_tasks(self) -> list[TaskSchema]:
-        tasks_orm = self.task_repository.get_all()
+
+    def list_tasks(self, current_user: UserORM) -> list[TaskSchema]:
+        tasks_orm = self.task_repository.get_all(current_user.id)
         return [TaskSchema.model_validate(task) for task in tasks_orm]
 
-    def create_task(self, task_create: TaskCreate) -> TaskSchema:
-        task = self.task_repository.create(title=task_create.title)
+
+    def create_task(self, task_create: TaskCreate, current_user: UserORM) -> TaskSchema:
+        task = self.task_repository.create(title=task_create.title, user_id=current_user.id)
         self.db.commit()
         return TaskSchema.model_validate(task)
 
-    def update_task(self, task_id: str, task_update: TaskUpdate) -> TaskSchema:
-        task_for_update = self.task_repository.get_by_id(task_id=task_id)
+
+    def update_task(self, task_old_title: str, task_update: TaskUpdate, current_user: UserORM) -> TaskSchema:
+        task_for_update = self.task_repository.get_by_name(title=task_old_title, user_id=current_user.id)
 
         if not task_for_update:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task with id {task_id} not found"
+                detail=f"Task with title {task_old_title} not found"
+            )
+        
+        if task_old_title == task_update.title:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"This task already names {task_update.title}"
             )
 
         if task_update.title != None:
@@ -39,13 +49,14 @@ class TaskService:
         self.db.commit()
         return TaskSchema.model_validate(task_for_update)
 
-    def delete_task(self, task_id: str) -> None:
-        task_for_delete = self.task_repository.get_by_id(task_id=task_id)
+
+    def delete_task(self, task_title: str, current_user: UserORM) -> None:
+        task_for_delete = self.task_repository.get_by_name(title=task_title, user_id=current_user.id)
 
         if not task_for_delete:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task with id {task_id} not found"
+                detail=f"Task with title {task_title} not found"
             )
 
         self.task_repository.delete(task_for_delete)

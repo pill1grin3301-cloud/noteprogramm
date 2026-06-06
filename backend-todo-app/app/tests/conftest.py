@@ -5,11 +5,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 
-from ..main import app  
-from ..db.session import get_db
-from ..models.base import Base
+from app.main import app  
+from app.db.session import get_db
+from app.models import Base
 
-TEST_DATABASE_URL = "postgresql+psycopg://postgres:admin@127.0.0.1:5432/test_db"
+TEST_DATABASE_URL = "postgresql+psycopg://postgres:admin@test_db:5432/test_db"
 
 @pytest.fixture(scope="session")
 def engine():

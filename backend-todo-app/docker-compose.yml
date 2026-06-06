@@ -20,17 +20,39 @@ services:
       timeout: 12s       # Таймаут проверки
       retries: 4        # Количество попыток
 
+  test_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: test_db
+    ports:
+      - "5433:5432"  # ← другой порт
+
+
   # Второй сервис: твоё приложение
   app:
     container_name: app_note
     build: .                    # собирать образ из текущей папки (Dockerfile)
     ports:
-      - "8080:8080"
+      - "8001:8001"
     depends_on:                 # ждём, пока db запустится
         db:
           condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:admin@note_db:5432/note
+    env_file:
+      - .env
+
+  frontend:
+    container_name: task_frontend
+    image: nginx:alpine
+    ports:
+      - "8081:80" # второй порт не трогать
+    volumes:
+      - ./simple_frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - app
 
 # Тома (хранилища данных)
 volumes:

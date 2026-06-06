@@ -1,28 +1,45 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from app.models.tasks import TaskORM
+from app.models import TaskORM
 
 
 class TaskRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def exists_by_title(self, title: str) -> bool:
-        """Проверяет, существует ли категория с таким именем"""
-        return self.db.query(TaskORM).filter(TaskORM.title == title).first() is not None
+    def exists_by_title(self, title: str, user_id: str) -> bool:
+        """Проверяет, существует ли задача с таким именем у пользователя"""
+        return self.db.query(TaskORM).filter(
+            TaskORM.title == title, 
+            TaskORM.user_id == user_id
+        ).first() is not None
 
-    def get_all(self) -> list[TaskORM]:
-        """Возвращает все задачи"""
-        return self.db.scalars(select(TaskORM)).all()
+
+    def get_all(self, user_id: str) -> list[TaskORM]:
+        """Возвращает все задачи пользователя"""
+        return self.db.query(TaskORM).filter(TaskORM.user_id == user_id).all()
     
-    def get_by_id(self, task_id: str) -> TaskORM:
-        """Возвращает задачу по айди"""
-        return self.db.get(TaskORM, task_id)
+
+    def get_by_id(self, task_id: str, user_id: str) -> TaskORM:
+        """Возвращает задачу пользователя по айди"""
+        return self.db.query(TaskORM).filter(
+            TaskORM.id == task_id, 
+            TaskORM.user_id == user_id
+        ).first()
     
-    def create(self, title: str) -> TaskORM:
+    
+    def get_by_name(self, title: str, user_id: str) -> TaskORM:
+        """Возвращает задачу пользователя по имени"""
+        return self.db.query(TaskORM).filter(
+            TaskORM.user_id == user_id, 
+            TaskORM.title == title
+        ).first()
+    
+
+    def create(self, title: str, user_id: str) -> TaskORM:
         """Создает новую задачу"""
-        new_task = TaskORM(title=title, completed=False)
+        new_task = TaskORM(title=title, completed=False, user_id=user_id)
         self.db.add(new_task)
         return new_task
     

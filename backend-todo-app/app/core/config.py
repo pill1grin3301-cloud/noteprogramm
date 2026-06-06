@@ -1,22 +1,14 @@
-# pydantic-settings
-# python-dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-import os
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class Settings():
+class Settings(BaseSettings):
     DATABASE_URL: str
-    cors_allowed_origins: list[str]
-    cors_allow_methods: list[str]
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
 
-
-def get_settings() -> Settings:
-    return Settings(
-        DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:admin@note_db:5432/note"),
-        cors_allowed_origins = ['http://localhost:3000'],
-        cors_allow_methods = ['*']
-
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
     )
 
-settings = get_settings()
+settings = Settings()

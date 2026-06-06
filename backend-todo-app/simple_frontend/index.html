@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager API Tester</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+        .api-info {
+            background: #e8f0fe;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .auth-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .auth-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .auth-form .field {
+            flex: 1;
+            min-width: 150px;
+        }
+        .auth-form label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .auth-form input {
+            margin: 0;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .user-info span {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .flex-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .panel {
+            flex: 1;
+            min-width: 350px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #1a73e8;
+            padding-bottom: 8px;
+        }
+        .endpoint-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .endpoint-group h4 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            margin: 5px 0 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        textarea {
+            font-family: monospace;
+            resize: vertical;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-bottom: 5px;
+        }
+        button:hover {
+            background: #1557b0;
+        }
+        button.delete {
+            background: #dc3545;
+        }
+        button.delete:hover {
+            background: #b02a37;
+        }
+        button.get {
+            background: #28a745;
+        }
+        button.get:hover {
+            background: #1e7e34;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #5a6268;
+        }
+        button.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        button.warning:hover {
+            background: #e0a800;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .response-area {
+            margin-top: 15px;
+        }
+        hr {
+            margin: 15px 0;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Task Manager API Tester</h1>
+        <div class="api-info">
+            🚀 API Base URL: <code>http://localhost:8001</code><br>
+            🔐 Auth URL: <code>http://localhost:8001/auth</code>
+        </div>
+
+        <div class="auth-panel">
+            <div id="unauthPanel">
+                <div class="auth-form">
+                    <div class="field">
+                        <label>👤 Username</label>
+                        <input type="text" id="loginUsername" placeholder="username">
+                    </div>
+                    <div class="field">
+                        <label>🔒 Password</label>
+                        <input type="password" id="loginPassword" placeholder="password">
+                    </div>
+                    <button onclick="register()">📝 Регистрация</button>
+                    <button onclick="login()">🔐 Вход</button>
+                </div>
+            </div>
+            <div id="authPanel" class="hidden">
+                <div class="user-info">
+                    <span>✅ Вы вошли как: <span id="currentUsername"></span></span>
+                    <div>
+                        <button class="warning" onclick="deleteAccount()">🗑️ Удалить аккаунт</button>
+                        <button class="secondary" onclick="logout()">🚪 Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <div class="flex-row">
+                <div class="panel">
+                    <h3>📝 Задачи</h3>
+                    
+                    <div class="endpoint-group">
+                        <h4>📋 GET /tasks (все задачи)</h4>
+                        <button class="get" onclick="getTasks()">Получить все задачи</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>➕ POST /tasks (создать задачу)</h4>
+                        <input type="text" id="taskTitle" placeholder="Название задачи">
+                        <button onclick="createTask()">Создать</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>✏️ PATCH /tasks?title={название} (обновить по имени)</h4>
+                        <input type="text" id="taskOldTitle" placeholder="Текущее название задачи">
+                        <input type="text" id="taskNewTitle" placeholder="Новое название (опционально)">
+                        <select id="taskCompleted" style="width: 100%;">
+                            <option value="">Статус (не менять)</option>
+                            <option value="true">✅ Выполнено</option>
+                            <option value="false">⭕ Не выполнено</option>
+                        </select>
+                        <button onclick="updateTask()">Обновить</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>🗑️ DELETE /tasks?title={название} (удалить по имени)</h4>
+                        <input type="text" id="deleteTaskTitle" placeholder="Название задачи">
+                        <button class="delete" onclick="deleteTask()">Удалить</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>🏷️ Категории</h3>
+                    
+                    <div class="endpoint-group">
+                        <h4>📋 GET /categories (все категории)</h4>
+                        <button class="get" onclick="getCategories()">Получить все категории</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>➕ POST /categories (создать категорию)</h4>
+                        <input type="text" id="catName" placeholder="Название категории">
+                        <button onclick="createCategory()">Создать</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>✏️ PATCH /categories?category_name={название} (переименовать)</h4>
+                        <input type="text" id="catOldName" placeholder="Текущее название категории">
+                        <input type="text" id="catNewName" placeholder="Новое название">
+                        <button onclick="updateCategory()">Обновить</button>
+                    </div>
+
+                    <div class="endpoint-group">
+                        <h4>🗑️ DELETE /categories?category_name={название} (удалить по имени)</h4>
+                        <input type="text" id="deleteCatName" placeholder="Название категории">
+                        <button class="delete" onclick="deleteCategory()">Удалить</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>🔧 Произвольный запрос</h3>
+                <div style="display: flex; gap: 10px;">
+                    <select id="customMethod" style="width: 100px;">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="customUrl" placeholder="/tasks или /categories?title=name" style="flex: 1;">
+                </div>
+                <textarea id="customBody" rows="3" placeholder='{"title": "Новая задача"}'></textarea>
+                <button onclick="sendCustom()">Отправить</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📬 Ответ сервера</h3>
+            <div class="response-area">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4>Статус: <span id="statusCode">—</span></h4>
+                    <button onclick="clearResponse()" style="padding: 2px 8px; font-size: 12px;">Очистить</button>
+                </div>
+                <pre id="response">готов к запросам...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8001';
+
+        function getToken() {
+            return localStorage.getItem('access_token');
+        }
+
+        function getCurrentUser() {
+            return localStorage.getItem('username');
+        }
+
+        function initUI() {
+            const token = getToken();
+            const username = getCurrentUser();
+            
+            if (token && username) {
+                document.getElementById('unauthPanel').classList.add('hidden');
+                document.getElementById('authPanel').classList.remove('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                document.getElementById('currentUsername').textContent = username;
+            } else {
+                document.getElementById('unauthPanel').classList.remove('hidden');
+                document.getElementById('authPanel').classList.add('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
+            }
+        }
+
+        async function sendRequest(method, endpoint, body = null) {
+            const token = getToken();
+            
+            if (!token) {
+                alert('Сначала выполните вход');
+                return;
+            }
+
+            const url = `${API_BASE_URL}${endpoint}`;
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            const statusSpan = document.getElementById('statusCode');
+            const responsePre = document.getElementById('response');
+            
+            statusSpan.textContent = '⏳ Загрузка...';
+            responsePre.textContent = 'Отправка запроса...';
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (response.status === 401) {
+                    logout();
+                    throw new Error('Сессия истекла, выполните вход заново');
+                }
+                
+                const statusClass = response.ok ? 'status-ok' : 'status-error';
+                statusSpan.innerHTML = `${response.status} ${response.statusText}`;
+                statusSpan.className = `status-badge ${statusClass}`;
+
+                if (response.status === 204) {
+                    responsePre.textContent = '(пустой ответ, ресурс удалён)';
+                    return null;
+                }
+
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                    responsePre.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    data = await response.text();
+                    responsePre.textContent = data || '(пустой ответ)';
+                }
+                return data;
+            } catch (error) {
+                statusSpan.innerHTML = '❌ Ошибка';
+                statusSpan.className = 'status-badge status-error';
+                responsePre.textContent = `Ошибка: ${error.message}`;
+                console.error('Request failed:', error);
+            }
+        }
+
+        // Аутентификация
+        async function register() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                alert('Введите username и password');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('username', username);
+                    initUI();
+                    alert('Регистрация успешна!');
+                } else {
+                    alert(`Ошибка: ${data.detail || 'Неизвестная ошибка'}`);
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!username || !password) {
+                alert('Введите username и password');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('username', username);
+                    initUI();
+                    alert('Вход выполнен!');
+                } else {
+                    alert(`Ошибка: ${data.detail || 'Неверные учетные данные'}`);
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        async function deleteAccount() {
+            const token = getToken();
+            const username = getCurrentUser();
+            
+            if (!token || !username) {
+                alert('Сначала выполните вход');
+                return;
+            }
+            
+            if (!confirm(`Вы уверены, что хотите удалить аккаунт "${username}"? Все задачи и категории будут удалены безвозвратно!`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Аккаунт успешно удалён');
+                    logout();
+                } else {
+                    const data = await response.json();
+                    alert(`Ошибка: ${data.detail || 'Не удалось удалить аккаунт'}`);
+                }
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('username');
+            initUI();
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            clearResponse();
+        }
+
+        // Задачи
+        function getTasks() {
+            sendRequest('GET', '/tasks');
+        }
+
+        function createTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            if (!title) {
+                alert('Введите название задачи');
+                return;
+            }
+            sendRequest('POST', '/tasks', { title });
+        }
+
+        function updateTask() {
+            const oldTitle = document.getElementById('taskOldTitle').value.trim();
+            if (!oldTitle) {
+                alert('Введите текущее название задачи');
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            params.append('title', oldTitle);
+            
+            const body = {};
+            const newTitle = document.getElementById('taskNewTitle').value.trim();
+            const completed = document.getElementById('taskCompleted').value;
+            
+            if (newTitle) body.title = newTitle;
+            if (completed !== '') body.completed = completed === 'true';
+            
+            if (Object.keys(body).length === 0) {
+                alert('Заполните хотя бы одно поле для обновления');
+                return;
+            }
+            
+            sendRequest('PATCH', `/tasks?${params.toString()}`, body);
+        }
+
+        function deleteTask() {
+            const title = document.getElementById('deleteTaskTitle').value.trim();
+            if (!title) {
+                alert('Введите название задачи');
+                return;
+            }
+            if (confirm(`Удалить задачу "${title}"?`)) {
+                sendRequest('DELETE', `/tasks?title=${encodeURIComponent(title)}`);
+            }
+        }
+
+        // Категории
+        function getCategories() {
+            sendRequest('GET', '/categories');
+        }
+
+        function createCategory() {
+            const name = document.getElementById('catName').value.trim();
+            if (!name) {
+                alert('Введите название категории');
+                return;
+            }
+            sendRequest('POST', '/categories', { name });
+        }
+
+        function updateCategory() {
+            const oldName = document.getElementById('catOldName').value.trim();
+            const newName = document.getElementById('catNewName').value.trim();
+            
+            if (!oldName || !newName) {
+                alert('Введите текущее и новое название категории');
+                return;
+            }
+            
+            sendRequest('PATCH', `/categories?category_name=${encodeURIComponent(oldName)}`, { name: newName });
+        }
+
+        function deleteCategory() {
+            const name = document.getElementById('deleteCatName').value.trim();
+            if (!name) {
+                alert('Введите название категории');
+                return;
+            }
+            if (confirm(`Удалить категорию "${name}"?`)) {
+                sendRequest('DELETE', `/categories?category_name=${encodeURIComponent(name)}`);
+            }
+        }
+
+        function sendCustom() {
+            const method = document.getElementById('customMethod').value;
+            let url = document.getElementById('customUrl').value;
+            if (!url.startsWith('/')) {
+                url = '/' + url;
+            }
+            let body = null;
+            const bodyText = document.getElementById('customBody').value.trim();
+            if (bodyText) {
+                try {
+                    body = JSON.parse(bodyText);
+                } catch (e) {
+                    alert('Невалидный JSON в теле запроса');
+                    return;
+                }
+            }
+            sendRequest(method, url, body);
+        }
+
+        function clearResponse() {
+            document.getElementById('statusCode').innerHTML = '—';
+            document.getElementById('response').textContent = 'готов к запросам...';
+        }
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const id = input.id;
+                    if (id === 'loginUsername' || id === 'loginPassword') {
+                        if (document.getElementById('loginUsername').value && document.getElementById('loginPassword').value) {
+                            login();
+                        }
+                    } else if (id === 'taskTitle') createTask();
+                    else if (id === 'taskOldTitle' || id === 'taskNewTitle') updateTask();
+                    else if (id === 'deleteTaskTitle') deleteTask();
+                    else if (id === 'catName') createCategory();
+                    else if (id === 'catOldName' || id === 'catNewName') updateCategory();
+                    else if (id === 'deleteCatName') deleteCategory();
+                }
+            });
+        });
+
+        initUI();
+    </script>
+</body>
+</html>
